@@ -4,6 +4,12 @@
 #include <linux/sched.h>
 #include <linux/device.h> /* for dev_warn */
 #include <linux/selection.h>
+<<<<<<< HEAD
+=======
+#include <linux/workqueue.h>
+#include <linux/tty.h>
+#include <asm/cmpxchg.h>
+>>>>>>> 4cde8d1... Staging: speakup: Update __speakup_paste_selection() tty (ab)usage to match vt
 
 #include "speakup.h"
 
@@ -127,7 +133,15 @@ int speakup_paste_selection(struct tty_struct *tty)
 {
 	struct vc_data *vc = (struct vc_data *) tty->driver_data;
 	int pasted = 0, count;
+	struct tty_ldisc *ld;
 	DECLARE_WAITQUEUE(wait, current);
+<<<<<<< HEAD
+=======
+
+	ld = tty_ldisc_ref_wait(tty);
+
+	/* FIXME: this is completely unsafe */
+>>>>>>> 4cde8d1... Staging: speakup: Update __speakup_paste_selection() tty (ab)usage to match vt
 	add_wait_queue(&vc->paste_wait, &wait);
 	while (sel_buffer && sel_buffer_lth > pasted) {
 		set_current_state(TASK_INTERRUPTIBLE);
@@ -140,12 +154,31 @@ int speakup_paste_selection(struct tty_struct *tty)
 		}
 		count = sel_buffer_lth - pasted;
 		count = min_t(int, count, tty->receive_room);
-		tty->ldisc->ops->receive_buf(tty, sel_buffer + pasted,
-			NULL, count);
+		ld->ops->receive_buf(tty, sel_buffer + pasted, NULL, count);
 		pasted += count;
 	}
 	remove_wait_queue(&vc->paste_wait, &wait);
 	current->state = TASK_RUNNING;
+<<<<<<< HEAD
+=======
+
+	tty_ldisc_deref(ld);
+	tty_kref_put(tty);
+}
+
+static struct speakup_paste_work speakup_paste_work = {
+	.work = __WORK_INITIALIZER(speakup_paste_work.work,
+				   __speakup_paste_selection)
+};
+
+int speakup_paste_selection(struct tty_struct *tty)
+{
+	if (cmpxchg(&speakup_paste_work.tty, NULL, tty) != NULL)
+		return -EBUSY;
+
+	tty_kref_get(tty);
+	schedule_work_on(WORK_CPU_UNBOUND, &speakup_paste_work.work);
+>>>>>>> 4cde8d1... Staging: speakup: Update __speakup_paste_selection() tty (ab)usage to match vt
 	return 0;
 }
 
