@@ -445,11 +445,19 @@ bool nsown_capable(int cap)
 }
 
 /**
+<<<<<<< HEAD
  * capable_wrt_inode_uidgid - Check nsown_cable and uid and gid mapped
  * @inode: The inode in question
  * @cap: The capability in question
  *
  * Return true if the current task has the given capability targeted at 
+=======
+ * capable_wrt_inode_uidgid - Check nsown_capable and uid and gid mapped
+ * @inode: The inode in question
+ * @cap: The capability in question
+ *
+ * Return true if the current task has the given capability targeted at
+>>>>>>> 4f80c6c... fs,userns: Change inode_capable to capable_wrt_inode_uidgid
  * its own user namespace and that the given inode's uid and gid are
  * mapped into the current user namespace.
  */
