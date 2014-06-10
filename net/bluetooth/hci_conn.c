@@ -683,7 +683,15 @@ static int hci_conn_auth(struct hci_conn *conn, __u8 sec_level, __u8 auth_type)
 		cp.handle = cpu_to_le16(conn->handle);
 		hci_send_cmd(conn->hdev, HCI_OP_AUTH_REQUESTED,
 			     sizeof(cp), &cp);
+<<<<<<< HEAD
 		if (conn->key_type != 0xff)
+=======
+
+		/* If we're already encrypted set the REAUTH_PEND flag,
+		 * otherwise set the ENCRYPT_PEND.
+		 */
+		if (conn->link_mode & HCI_LM_ENCRYPT)
+>>>>>>> e7551f9... Bluetooth: Fix check for connection encryption
 			set_bit(HCI_CONN_REAUTH_PEND, &conn->flags);
 	}
 
