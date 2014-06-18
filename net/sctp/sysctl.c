@@ -348,6 +348,39 @@ static int proc_sctp_do_hmac_alg(ctl_table *ctl,
 	return ret;
 }
 
+<<<<<<< HEAD
+=======
+static int proc_sctp_do_auth(struct ctl_table *ctl, int write,
+			     void __user *buffer, size_t *lenp,
+			     loff_t *ppos)
+{
+	struct net *net = current->nsproxy->net_ns;
+	struct ctl_table tbl;
+	int new_value, ret;
+
+	memset(&tbl, 0, sizeof(struct ctl_table));
+	tbl.maxlen = sizeof(unsigned int);
+
+	if (write)
+		tbl.data = &new_value;
+	else
+		tbl.data = &net->sctp.auth_enable;
+
+	ret = proc_dointvec(&tbl, write, buffer, lenp, ppos);
+	if (write && ret == 0) {
+		struct sock *sk = net->sctp.ctl_sock;
+
+		net->sctp.auth_enable = new_value;
+		/* Update the value in the control socket */
+		lock_sock(sk);
+		sctp_sk(sk)->ep->auth_enable = new_value;
+		release_sock(sk);
+	}
+
+	return ret;
+}
+
+>>>>>>> 66001e0... net: sctp: check proc_dointvec result in proc_sctp_do_auth
 int sctp_sysctl_net_register(struct net *net)
 {
 	struct ctl_table *table;
