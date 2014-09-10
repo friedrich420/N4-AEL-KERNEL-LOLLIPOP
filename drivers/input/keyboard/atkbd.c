@@ -1775,6 +1775,15 @@ static const struct dmi_system_id atkbd_dmi_quirk_table[] __initconst = {
 		.callback = atkbd_setup_scancode_fixup,
 		.driver_data = atkbd_oqo_01plus_scancode_fixup,
 	},
+<<<<<<< HEAD
+=======
+	{
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "LG Electronics"),
+		},
+		.callback = atkbd_deactivate_fixup,
+	},
+>>>>>>> 521f971... Input: atkbd - do not try 'deactivate' keyboard on any LG laptops
 	{ }
 };
 
