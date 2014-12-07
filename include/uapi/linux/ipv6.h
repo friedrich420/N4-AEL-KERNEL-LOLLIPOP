@@ -161,7 +161,13 @@ enum {
 	DEVCONF_FORCE_TLLAO,
 	DEVCONF_NDISC_NOTIFY,
 	DEVCONF_ACCEPT_RA_PREFIX_ROUTE,
+<<<<<<< HEAD
 	DEVCONF_ACCEPT_RA_RT_TABLE,
+=======
+#ifdef CONFIG_IPV6_USE_OPTIMISTIC
+	DEVCONF_USE_OPTIMISTIC,
+#endif
+>>>>>>> a47c265... net: ipv6: only use optimistic address if enabled [twistedumbrella]
 	DEVCONF_MAX
 };
 
