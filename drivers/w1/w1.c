@@ -527,7 +527,6 @@ void w1_master_search(void);
 #if defined(CONFIG_W1_SLAVE_DS28E15) || defined(CONFIG_W1_SLAVE_DS28EL35)
 static ssize_t w1_master_attribute_show_verify_mac(struct device *dev, struct device_attribute *attr, char *buf)
 {
-<<<<<<< HEAD
 	int result = -1;
 #if defined(CONFIG_SEC_FACTORY) && defined(CONFIG_W1_SLAVE_DS28EL35)
 	struct w1_master *md = dev_to_w1_master(dev);
@@ -540,7 +539,7 @@ static ssize_t w1_master_attribute_show_verify_mac(struct device *dev, struct de
 	result = verification;
 
 	return sprintf(buf, "%d\n", result);
-=======
+
 //	int result = -1;
 //#if defined(CONFIG_SEC_FACTORY) && defined(CONFIG_W1_SLAVE_DS28EL35)
 //	struct w1_master *md = dev_to_w1_master(dev);
@@ -563,7 +562,6 @@ static ssize_t w1_master_attribute_show_verify_mac(struct device *dev, struct de
 
 //	return sprintf(buf, "%d\n", result);
     return sprintf(buf, "%d\n", 0);
->>>>>>> 00bad6d... SView Cover Bypass Hack: Initial Implementation [twistedumbrella]
 }
 
 static ssize_t w1_master_attribute_show_check_id(struct device *dev, struct device_attribute *attr, char *buf)
