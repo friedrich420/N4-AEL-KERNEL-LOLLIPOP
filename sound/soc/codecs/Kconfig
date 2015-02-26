@@ -599,15 +599,11 @@ config SND_SOC_MSM_HDMI_CODEC_RX
 	depends on FB_MSM_MDSS_HDMI_PANEL && (SND_SOC_MSM8974 || SND_SOC_APQ8084 || SND_SOC_MPQ8092)
 	help
 	HDMI audio drivers should be built only if the platform
-        supports hdmi panel.
-<<<<<<< HEAD
-        
+        supports hdmi panel.  
 source "sound/soc/codecs/dbmd2/Kconfig"
-=======
 
 config SOUND_CONTROL_HAX_3_GPL
 	tristate "new wcd93xx sound control hax"
 	default y
 	help
 	  FauxSound WCD93xx chipset sound control hacks 3.0 for deeper hax
->>>>>>> d6700ea... Faux Sound Control: Initial Port to the Note 4 by Pafcholini [credits also to thehacker911]
