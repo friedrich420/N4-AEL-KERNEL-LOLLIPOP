@@ -73,15 +73,12 @@
 #include "f_mtp.c"
 #endif
 #include "f_accessory.c"
-<<<<<<< HEAD
-=======
 #include "f_hid.h"
 #include "f_hid_android_keyboard.c"
 #include "f_hid_android_mouse.c"
 #ifdef CONFIG_USB_ANDROID_SAMSUNG_SIDESYNC
 #include "f_conn_gadget.c"
 #endif
->>>>>>> 270f59c... USB Keyboard/Mouse Hack baby
 #include "f_rndis.c"
 #include "rndis.c"
 #include "f_qc_ecm.c"
