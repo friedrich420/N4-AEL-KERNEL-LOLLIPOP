@@ -325,11 +325,8 @@ int generic_permission(struct inode *inode, int mask)
 			return 0;
 		if (!(mask & MAY_WRITE))
 			if (capable_wrt_inode_uidgid(inode,
-<<<<<<< HEAD
 						CAP_DAC_READ_SEARCH))
-=======
 						     CAP_DAC_READ_SEARCH))
->>>>>>> cb0fe8f... Linux 3.10.44
 				return 0;
 		return -EACCES;
 	}
