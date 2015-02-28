@@ -8481,8 +8481,7 @@ static int md_notify_reboot(struct notifier_block *this,
 		if (mddev_trylock(mddev)) {
 			if (mddev->pers)
 				__md_stop_writes(mddev);
-			if (mddev->persistent)
-				mddev->safemode = 2;
+			mddev->safemode = 2;
 			mddev_unlock(mddev);
 		}
 		need_delay = 1;
