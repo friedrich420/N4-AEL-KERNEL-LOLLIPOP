@@ -43,8 +43,6 @@ config WAKELOCK
 	bool
 	default y
 
-<<<<<<< HEAD
-=======
 config POWERSUSPEND
 	bool "Power suspend"
 	default y
@@ -58,7 +56,6 @@ config POWERSUSPEND_DEBUG
 	help
 	  Output debugging info in dmesg [POWERSUSPEND] (Yank555.lu)
 
->>>>>>> 5e581e8... kernel/power/powersuspend: new PM kernel driver for Android w/o early_suspend v1.7 (faux123/Yank555.lu)
 config HIBERNATE_CALLBACKS
 	bool
 
