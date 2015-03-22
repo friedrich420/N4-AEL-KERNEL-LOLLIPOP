@@ -116,7 +116,6 @@ static int max_timeout = 10000;
 
 static int vibrator_value = -1;
 static int vibrator_work;
-int8_t vibe_strength = 125;
 
 #define TEST_MODE_TIME 10000
 
@@ -135,7 +134,7 @@ static int set_vibetonz(int timeout)
 	} else {
 		DbgOut((KERN_INFO "tspdrv: ENABLE\n"));
 		if (vibrator_drvdata.vib_model == HAPTIC_PWM) {
-			strength = vibe_strength;
+			strength = 126;
 			/* 90% duty cycle */
 			ImmVibeSPI_ForceOut_SetSamples(0, 8, 1, &strength);
 		} else { /* HAPTIC_MOTOR */
@@ -153,28 +152,6 @@ static void _set_vibetonz_work(struct work_struct *unused)
 	set_vibetonz(vibrator_work);
 	return;
 }
-
-static ssize_t show_vibe_strength(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%d\n", vibe_strength);
-}
-
-static ssize_t store_vibe_strength(struct device *dev, struct device_attribute *attr,const char *buf, size_t size)
-{
-	int value;
-	sscanf(buf, "%d", &value);
-	if(value < 5)
-		value = 5;
-	else if(value > 125)
-		value = 125;
-
-	vibe_strength = value;
-
-	return vibe_strength;
-}
-
-static DEVICE_ATTR(vibe_strength, 0777, show_vibe_strength, store_vibe_strength);
-
 
 static enum hrtimer_restart vibetonz_timer_func(struct hrtimer *timer)
 {
@@ -241,10 +218,6 @@ static void vibetonz_start(void)
 	if (ret)
 		DbgOut((KERN_ERR
 		"tspdrv: timed_output_dev_register is fail\n"));
-
-	ret = device_create_file(timed_output_vt.dev, &dev_attr_vibe_strength);
-	if(ret)
-		printk(KERN_ERR "[VIBETONZ] vibe_strength device file create failed\n");
 }
 
 /* File IO */
