@@ -172,12 +172,8 @@ static int sk_diag_fill(struct sock *sk, struct sk_buff *skb,
 		goto out_nlmsg_trim;
 
 	if ((req->pdiag_show & PACKET_SHOW_FILTER) &&
-<<<<<<< HEAD
-	    sock_diag_put_filterinfo(user_ns, sk, skb, PACKET_DIAG_FILTER))
-=======
 	    sock_diag_put_filterinfo(may_report_filterinfo, sk, skb,
 				     PACKET_DIAG_FILTER))
->>>>>>> 6103be3... net: Move the permission check in sock_diag_put_filterinfo to packet_diag_dump
 		goto out_nlmsg_trim;
 
 	return nlmsg_end(skb, nlh);
