@@ -65,8 +65,11 @@ extern int sysctl_sctp_wmem[3];
 static int proc_sctp_do_hmac_alg(ctl_table *ctl,
 				int write,
 				void __user *buffer, size_t *lenp,
-
 				loff_t *ppos);
+static int proc_sctp_do_auth(struct ctl_table *ctl, int write,
+			     void __user *buffer, size_t *lenp,
+			     loff_t *ppos);
+
 static ctl_table sctp_table[] = {
 	{
 		.procname	= "sctp_mem",
@@ -267,7 +270,7 @@ static ctl_table sctp_net_table[] = {
 		.data		= &init_net.sctp.auth_enable,
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
-		.proc_handler	= proc_dointvec,
+		.proc_handler	= proc_sctp_do_auth,
 	},
 	{
 		.procname	= "addr_scope_policy",
@@ -348,8 +351,6 @@ static int proc_sctp_do_hmac_alg(ctl_table *ctl,
 	return ret;
 }
 
-<<<<<<< HEAD
-=======
 static int proc_sctp_do_auth(struct ctl_table *ctl, int write,
 			     void __user *buffer, size_t *lenp,
 			     loff_t *ppos)
@@ -380,7 +381,6 @@ static int proc_sctp_do_auth(struct ctl_table *ctl, int write,
 	return ret;
 }
 
->>>>>>> 66001e0... net: sctp: check proc_dointvec result in proc_sctp_do_auth
 int sctp_sysctl_net_register(struct net *net)
 {
 	struct ctl_table *table;
