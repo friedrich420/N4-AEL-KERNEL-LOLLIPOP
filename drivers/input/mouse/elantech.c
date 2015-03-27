@@ -11,6 +11,7 @@
  */
 
 #include <linux/delay.h>
+#include <linux/dmi.h>
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/input.h>
@@ -815,15 +816,11 @@ static int elantech_set_absolute_mode(struct psmouse *psmouse)
 		break;
 
 	case 3:
-<<<<<<< HEAD
-		etd->reg_10 = 0x0b;
-=======
 		if (etd->set_hw_resolution)
 			etd->reg_10 = 0x0b;
 		else
 			etd->reg_10 = 0x01;
 
->>>>>>> 075195a... Input: elantech - don't set bit 1 of reg_10 when the no_hw_res quirk is set
 		if (elantech_write_reg(psmouse, 0x10, etd->reg_10))
 			rc = -1;
 
@@ -1323,8 +1320,6 @@ static int elantech_reconnect(struct psmouse *psmouse)
 }
 
 /*
-<<<<<<< HEAD
-=======
  * Some hw_version 3 models go into error state when we try to set
  * bit 3 and/or bit 1 of r10.
  */
@@ -1342,7 +1337,6 @@ static const struct dmi_system_id no_hw_res_dmi_table[] = {
 };
 
 /*
->>>>>>> 075195a... Input: elantech - don't set bit 1 of reg_10 when the no_hw_res quirk is set
  * determine hardware version and set some properties according to it.
  */
 static int elantech_set_properties(struct elantech_data *etd)
@@ -1392,6 +1386,9 @@ static int elantech_set_properties(struct elantech_data *etd)
 		if (etd->fw_version >= 0x020800)
 			etd->reports_pressure = true;
 	}
+
+	/* Enable real hardware resolution on hw_version 3 ? */
+	etd->set_hw_resolution = !dmi_check_system(no_hw_res_dmi_table);
 
 	return 0;
 }
