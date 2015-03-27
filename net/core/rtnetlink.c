@@ -1039,11 +1039,8 @@ static int rtnl_dump_ifinfo(struct sk_buff *skb, struct netlink_callback *cb)
 	struct hlist_head *head;
 	struct nlattr *tb[IFLA_MAX+1];
 	u32 ext_filter_mask = 0;
-<<<<<<< HEAD
-=======
 	int err;
 	int hdrlen;
->>>>>>> 63c28b9... rtnetlink: fix userspace API breakage for iproute2 < v3.9.0
 
 	s_h = cb->args[0];
 	s_idx = cb->args[1];
