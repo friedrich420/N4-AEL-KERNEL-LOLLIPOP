@@ -543,6 +543,11 @@
  */
 #define FTDI_TIAO_UMPA_PID	0x8a98	/* TIAO/DIYGADGET USB Multi-Protocol Adapter */
 
+/*
+ * NovaTech product ids (FTDI_VID)
+ */
+#define FTDI_NT_ORIONLXM_PID	0x7c90	/* OrionLXm Substation Automation Platform */
+
 
 /********************************/
 /** third-party VID/PID combos **/
@@ -1338,8 +1343,6 @@
  * Manufacturer: Cressi
  */
 #define FTDI_CRESSI_PID		0x87d0
-<<<<<<< HEAD
-=======
 
 /*
  * Brainboxes devices
@@ -1382,4 +1385,3 @@
  * ekey biometric systems GmbH (http://ekey.net/)
  */
 #define FTDI_EKEY_CONV_USB_PID		0xCB08	/* Converter USB */
->>>>>>> 09b328f... USB: ftdi_sio: Added PID for new ekey device
