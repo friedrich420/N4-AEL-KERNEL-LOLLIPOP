@@ -1306,12 +1306,8 @@ static int do_setlink(struct net_device *dev, struct ifinfomsg *ifm,
 			err = PTR_ERR(net);
 			goto errout;
 		}
-<<<<<<< HEAD
 		if (!ns_capable(net->user_ns, CAP_NET_ADMIN)) {
-=======
-		if (!netlink_ns_capable(skb, net->user_ns, CAP_NET_ADMIN)) {
 			put_net(net);
->>>>>>> b4f2ad4... Linux 3.10.63
 			err = -EPERM;
 			goto errout;
 		}
