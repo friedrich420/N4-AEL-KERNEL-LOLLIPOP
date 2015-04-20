@@ -43,6 +43,7 @@ obj-$(CONFIG_CPU_FREQ_GOV_BIOSHOCK)	+= cpufreq_bioshock.o
 obj-$(CONFIG_CPU_FREQ_GOV_INTERACTIVE_PRO)	+= cpufreq_interactive_pro.o
 //obj-$(CONFIG_CPU_FREQ_GOV_OPTIMAX) 		+= cpufreq_optimax.o
 obj-$(CONFIG_CPU_FREQ_GOV_PRESERVATIVE)	+= cpufreq_preservative.o
+obj-$(CONFIG_CPU_FREQ_GOV_MYTHX_PLUG)	+= cpufreq_mythx_plug.o
 obj-$(CONFIG_CPU_FREQ_GOV_COMMON)		+= cpufreq_governor.o
 obj-$(CONFIG_CPU_BOOST)			+= cpu-boost.o
 
