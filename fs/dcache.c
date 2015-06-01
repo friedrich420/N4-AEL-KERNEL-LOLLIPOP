@@ -364,12 +364,7 @@ static struct dentry *d_kill(struct dentry *dentry, struct dentry *parent)
 	__releases(parent->d_lock)
 	__releases(dentry->d_inode->i_lock)
 {
-<<<<<<< HEAD
-	__list_del_entry(&dentry->d_child);
 	list_del(&dentry->d_u.d_child);
-=======
-	list_del(&dentry->d_child);
->>>>>>> parent of 6e33632... deal with deadlock in d_walk()
 	/*
 	 * Inform try_to_ascend() that we are no longer attached to the
 	 * dentry tree
@@ -1080,18 +1075,7 @@ resume:
 		this_parent = try_to_ascend(this_parent, locked, seq);
 		if (!this_parent)
 			goto rename_retry;
-		next = child->d_child.next;
-<<<<<<< HEAD
-		while (unlikely(child->d_flags & DCACHE_DENTRY_KILLED)) {
-			if (next == &this_parent->d_subdirs)
-				goto ascend;
-			child = list_entry(next, struct dentry, d_child);
-			next = next->next;
-		}
-		rcu_read_unlock();
 		next = child->d_u.d_child.next;
-=======
->>>>>>> parent of 6e33632... deal with deadlock in d_walk()
 		goto resume;
 	}
 	spin_unlock(&this_parent->d_lock);
@@ -1102,7 +1086,7 @@ resume:
 	return 0; /* No mount points found in tree */
 positive:
 	if (!locked && read_seqretry(&rename_lock, seq))
-		goto rename_retry_unlocked;
+		goto rename_retry;
 	if (locked)
 		write_sequnlock(&rename_lock);
 	return 1;
@@ -1110,7 +1094,6 @@ positive:
 rename_retry:
 	if (locked)
 		goto again;
-rename_retry_unlocked:
 	locked = 1;
 	write_seqlock(&rename_lock);
 	goto again;
@@ -1175,7 +1158,6 @@ resume:
 		 */
 		if (found && need_resched()) {
 			spin_unlock(&dentry->d_lock);
-			rcu_read_lock();
 			goto out;
 		}
 
@@ -1200,18 +1182,7 @@ resume:
 		this_parent = try_to_ascend(this_parent, locked, seq);
 		if (!this_parent)
 			goto rename_retry;
-		next = child->d_child.next;
-<<<<<<< HEAD
-		while (unlikely(child->d_flags & DCACHE_DENTRY_KILLED)) {
-			if (next == &this_parent->d_subdirs)
-				goto ascend;
-			child = list_entry(next, struct dentry, d_child);
-			next = next->next;
-		}
-		rcu_read_unlock();
 		next = child->d_u.d_child.next;
-=======
->>>>>>> parent of 6e33632... deal with deadlock in d_walk()
 		goto resume;
 	}
 out:
@@ -2992,18 +2963,7 @@ resume:
 		this_parent = try_to_ascend(this_parent, locked, seq);
 		if (!this_parent)
 			goto rename_retry;
-		next = child->d_child.next;
-<<<<<<< HEAD
-		while (unlikely(child->d_flags & DCACHE_DENTRY_KILLED)) {
-			if (next == &this_parent->d_subdirs)
-				goto ascend;
-			child = list_entry(next, struct dentry, d_child);
-			next = next->next;
-		}
-		rcu_read_unlock();
 		next = child->d_u.d_child.next;
-=======
->>>>>>> parent of 6e33632... deal with deadlock in d_walk()
 		goto resume;
 	}
 	spin_unlock(&this_parent->d_lock);
