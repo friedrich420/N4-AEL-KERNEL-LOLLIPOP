@@ -44,6 +44,9 @@ obj-$(CONFIG_CPU_FREQ_GOV_INTERACTIVE_PRO)	+= cpufreq_interactive_pro.o
 //obj-$(CONFIG_CPU_FREQ_GOV_OPTIMAX) 		+= cpufreq_optimax.o
 obj-$(CONFIG_CPU_FREQ_GOV_PRESERVATIVE)	+= cpufreq_preservative.o
 obj-$(CONFIG_CPU_FREQ_GOV_MYTHX_PLUG)	+= cpufreq_mythx_plug.o
+obj-$(CONFIG_CPU_FREQ_GOV_BARRY_ALLEN)	+= cpufreq_barry_allen.o
+obj-$(CONFIG_CPU_FREQ_GOV_HYPER)	+= cpufreq_hyper.o
+obj-$(CONFIG_CPU_FREQ_GOV_WAVE)		+= cpufreq_wave.o
 obj-$(CONFIG_CPU_FREQ_GOV_COMMON)		+= cpufreq_governor.o
 obj-$(CONFIG_CPU_BOOST)			+= cpu-boost.o
 
