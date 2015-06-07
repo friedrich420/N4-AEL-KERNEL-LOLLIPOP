@@ -29,7 +29,6 @@ obj-$(CONFIG_CPU_FREQ_GOV_ALUCARD)	+= cpufreq_alucard.o
 obj-$(CONFIG_CPU_FREQ_GOV_CONSERVATIVEX) += cpufreq_conservativex.o
 obj-$(CONFIG_CPU_FREQ_GOV_BLUACTIVE)	+= cpufreq_bluactive.o
 //obj-$(CONFIG_CPU_FREQ_GOV_ELEMENTALX)	+= cpufreq_elementalx.o
-//obj-$(CONFIG_CPU_FREQ_GOV_ZZMOOVE)	+= cpufreq_zzmoove.o
 //obj-$(CONFIG_CPU_FREQ_GOV_LULZACTIVEQ) += cpufreq_lulzactiveq.o
 //obj-$(CONFIG_CPU_FREQ_GOV_PEGASUSQ)	+= cpufreq_pegasusq.o
 //obj-$(CONFIG_CPU_FREQ_GOV_ABYSSPLUGV2)	+= cpufreq_abyssplugv2.o
@@ -47,6 +46,7 @@ obj-$(CONFIG_CPU_FREQ_GOV_MYTHX_PLUG)	+= cpufreq_mythx_plug.o
 obj-$(CONFIG_CPU_FREQ_GOV_BARRY_ALLEN)	+= cpufreq_barry_allen.o
 obj-$(CONFIG_CPU_FREQ_GOV_HYPER)	+= cpufreq_hyper.o
 obj-$(CONFIG_CPU_FREQ_GOV_WAVE)		+= cpufreq_wave.o
+obj-$(CONFIG_CPU_FREQ_GOV_ZZMOOVE)      += cpufreq_zzmoove.o
 obj-$(CONFIG_CPU_FREQ_GOV_COMMON)		+= cpufreq_governor.o
 obj-$(CONFIG_CPU_BOOST)			+= cpu-boost.o
 
