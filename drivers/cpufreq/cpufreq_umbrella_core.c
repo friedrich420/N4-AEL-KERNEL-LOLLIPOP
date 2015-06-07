@@ -79,14 +79,14 @@ static struct mutex gov_lock;
 static unsigned int hispeed_freq;
 
 /* Go to hi speed when CPU load at or above this value. */
-#define DEFAULT_GO_HISPEED_LOAD 95
+#define DEFAULT_GO_HISPEED_LOAD 90
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Sampling down factor to be applied to min_sample_time at max freq */
 static unsigned int sampling_down_factor;
 
 /* Target load.  Lower values result in higher CPU speeds. */
-#define DEFAULT_TARGET_LOAD 85
+#define DEFAULT_TARGET_LOAD 80
 static unsigned int default_target_loads[] = {DEFAULT_TARGET_LOAD};
 static spinlock_t target_loads_lock;
 static unsigned int *target_loads = default_target_loads;
@@ -132,8 +132,8 @@ static u64 boostpulse_endtime;
 #define DEFAULT_TIMER_SLACK (4 * DEFAULT_TIMER_RATE)
 static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
-#define DEFAULT_INACTIVE_FREQ_ON    1958400
-#define DEFAULT_INACTIVE_FREQ_OFF   729600
+#define DEFAULT_INACTIVE_FREQ_ON    2035200
+#define DEFAULT_INACTIVE_FREQ_OFF   576000
 unsigned int max_inactive_freq = DEFAULT_INACTIVE_FREQ_ON;
 unsigned int max_inactive_freq_screen_on = DEFAULT_INACTIVE_FREQ_ON;
 unsigned int max_inactive_freq_screen_off = DEFAULT_INACTIVE_FREQ_OFF;
@@ -731,7 +731,8 @@ static void cpufreq_umbrella_core_timer(unsigned long data)
 		pcpu->floor_validate_time = now;
 	}
 
-	if (pcpu->target_freq == new_freq) {
+    if (pcpu->target_freq == new_freq &&
+        pcpu->target_freq <= pcpu->policy->cur) {
 		trace_cpufreq_umbrella_core_already(
 			data, cpu_load, pcpu->target_freq,
 			pcpu->policy->cur, new_freq);
@@ -1036,7 +1037,7 @@ static ssize_t show_target_loads(
 		ret += sprintf(buf + ret, "%u%s", target_loads[i],
 			       i & 0x1 ? ":" : " ");
 #endif
-	ret += sprintf(buf + ret, "\n");
+	ret += sprintf(buf + -ret, "\n");
 	spin_unlock_irqrestore(&target_loads_lock, flags);
 	return ret;
 }
@@ -1103,7 +1104,7 @@ static ssize_t show_above_hispeed_delay(
 		ret += sprintf(buf + ret, "%u%s", above_hispeed_delay[i],
 			       i & 0x1 ? ":" : " ");
 #endif
-	ret += sprintf(buf + ret, "\n");
+	ret += sprintf(buf + -ret, "\n");
 	spin_unlock_irqrestore(&above_hispeed_delay_lock, flags);
 	return ret;
 }
@@ -1517,7 +1518,7 @@ static ssize_t max_inactive_freq_screen_on_store(struct kobject *kobj, struct ko
         return count;
 
     max_inactive_freq_screen_on = new_max_inactive_freq_screen_on;
-    if (max_inactive_freq_screen_on < max_inactive_freq) {
+    if (max_inactive_freq_screen_on != max_inactive_freq) {
         max_inactive_freq = max_inactive_freq_screen_on;
     }
     return count;
@@ -1979,7 +1980,7 @@ static int cpufreq_governor_umbrella_core(struct cpufreq_policy *policy,
 static void cpufreq_umbrella_core_power_suspend(struct power_suspend *h)
 {
     mutex_lock(&gov_lock);
-    if (max_inactive_freq_screen_off < max_inactive_freq) {
+    if (max_inactive_freq_screen_off != max_inactive_freq) {
         max_inactive_freq = max_inactive_freq_screen_off;
     }
     mutex_unlock(&gov_lock);
@@ -1988,7 +1989,7 @@ static void cpufreq_umbrella_core_power_suspend(struct power_suspend *h)
 static void cpufreq_umbrella_core_power_resume(struct power_suspend *h)
 {
     mutex_lock(&gov_lock);
-    if (max_inactive_freq_screen_on < max_inactive_freq) {
+    if (max_inactive_freq_screen_on != max_inactive_freq) {
         max_inactive_freq = max_inactive_freq_screen_on;
     }
     mutex_unlock(&gov_lock);
