@@ -338,6 +338,12 @@ config CPU_FREQ_DEFAULT_GOV_ZZMOOVE
 	  frequency lookup tables and optimized scaling triggers instead of
 	  % frequency steps to get smooth up/downscaling dependant on CPU load.
 
+config CPU_FREQ_DEFAULT_GOV_SMARTASSH3
+	bool "smartassH3"
+	select CPU_FREQ_GOV_SMARTASSH3
+ 	help
+	  Use the CPUFreq governor 'smartassH3' as default.
+
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -676,6 +682,12 @@ config CPU_FREQ_GOV_ZZMOOVE
 	  frequency lookup tables and optimized scaling triggers instead of
 	  % frequency steps to get smooth up/downscaling dependant on CPU load.
 	  If in doubt, say N.
+
+config CPU_FREQ_GOV_SMARTASSH3
+	tristate "'smartassH3' cpufreq governor"
+ 	depends on CPU_FREQ
+ 	help
+	  'smartassH3' - a "smart" governor
 
 config CPU_BOOST
 	tristate "Event base short term CPU freq boost"
