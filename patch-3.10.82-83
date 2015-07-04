@@ -1,0 +1,795 @@
+diff --git a/Makefile b/Makefile
+index 5e3e665a10b7..21529dbcc11d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ VERSION = 3
+ PATCHLEVEL = 10
+-SUBLEVEL = 82
++SUBLEVEL = 83
+ EXTRAVERSION =
+ NAME = TOSSUG Baby Fish
+ 
+diff --git a/drivers/acpi/acpica/acmacros.h b/drivers/acpi/acpica/acmacros.h
+index 53666bd9193d..32b0bf32364a 100644
+--- a/drivers/acpi/acpica/acmacros.h
++++ b/drivers/acpi/acpica/acmacros.h
+@@ -63,19 +63,15 @@
+ #define ACPI_SET64(ptr, val)            (*ACPI_CAST64 (ptr) = (u64) (val))
+ 
+ /*
+- * printf() format helpers
++ * printf() format helper. This macros is a workaround for the difficulties
++ * with emitting 64-bit integers and 64-bit pointers with the same code
++ * for both 32-bit and 64-bit hosts.
+  */
+ 
+ /* Split 64-bit integer into two 32-bit values. Use with %8.8X%8.8X */
+ 
+ #define ACPI_FORMAT_UINT64(i)           ACPI_HIDWORD(i), ACPI_LODWORD(i)
+ 
+-#if ACPI_MACHINE_WIDTH == 64
+-#define ACPI_FORMAT_NATIVE_UINT(i)      ACPI_FORMAT_UINT64(i)
+-#else
+-#define ACPI_FORMAT_NATIVE_UINT(i)      0, (i)
+-#endif
+-
+ /*
+  * Macros for moving data around to/from buffers that are possibly unaligned.
+  * If the hardware supports the transfer of unaligned data, just do the store.
+diff --git a/drivers/acpi/acpica/dsopcode.c b/drivers/acpi/acpica/dsopcode.c
+index e9b13b92ba1e..46a37aeaedae 100644
+--- a/drivers/acpi/acpica/dsopcode.c
++++ b/drivers/acpi/acpica/dsopcode.c
+@@ -446,7 +446,7 @@ acpi_ds_eval_region_operands(struct acpi_walk_state *walk_state,
+ 
+ 	ACPI_DEBUG_PRINT((ACPI_DB_EXEC, "RgnObj %p Addr %8.8X%8.8X Len %X\n",
+ 			  obj_desc,
+-			  ACPI_FORMAT_NATIVE_UINT(obj_desc->region.address),
++			  ACPI_FORMAT_UINT64(obj_desc->region.address),
+ 			  obj_desc->region.length));
+ 
+ 	/* Now the address and length are valid for this opregion */
+@@ -544,7 +544,7 @@ acpi_ds_eval_table_region_operands(struct acpi_walk_state *walk_state,
+ 
+ 	ACPI_DEBUG_PRINT((ACPI_DB_EXEC, "RgnObj %p Addr %8.8X%8.8X Len %X\n",
+ 			  obj_desc,
+-			  ACPI_FORMAT_NATIVE_UINT(obj_desc->region.address),
++			  ACPI_FORMAT_UINT64(obj_desc->region.address),
+ 			  obj_desc->region.length));
+ 
+ 	/* Now the address and length are valid for this opregion */
+diff --git a/drivers/acpi/acpica/evregion.c b/drivers/acpi/acpica/evregion.c
+index 8fab9262d98a..ad698893e829 100644
+--- a/drivers/acpi/acpica/evregion.c
++++ b/drivers/acpi/acpica/evregion.c
+@@ -276,7 +276,7 @@ acpi_ev_address_space_dispatch(union acpi_operand_object *region_obj,
+ 	ACPI_DEBUG_PRINT((ACPI_DB_OPREGION,
+ 			  "Handler %p (@%p) Address %8.8X%8.8X [%s]\n",
+ 			  &region_obj->region.handler->address_space, handler,
+-			  ACPI_FORMAT_NATIVE_UINT(address),
++			  ACPI_FORMAT_UINT64(address),
+ 			  acpi_ut_get_region_name(region_obj->region.
+ 						  space_id)));
+ 
+diff --git a/drivers/acpi/acpica/exdump.c b/drivers/acpi/acpica/exdump.c
+index e5a3c249f7fa..7e6a56fe1d6e 100644
+--- a/drivers/acpi/acpica/exdump.c
++++ b/drivers/acpi/acpica/exdump.c
+@@ -621,8 +621,8 @@ void acpi_ex_dump_operand(union acpi_operand_object *obj_desc, u32 depth)
+ 			acpi_os_printf("\n");
+ 		} else {
+ 			acpi_os_printf(" base %8.8X%8.8X Length %X\n",
+-				       ACPI_FORMAT_NATIVE_UINT(obj_desc->region.
+-							       address),
++				       ACPI_FORMAT_UINT64(obj_desc->region.
++							  address),
+ 				       obj_desc->region.length);
+ 		}
+ 		break;
+diff --git a/drivers/acpi/acpica/exfldio.c b/drivers/acpi/acpica/exfldio.c
+index c84ee956fa4c..dc210c379277 100644
+--- a/drivers/acpi/acpica/exfldio.c
++++ b/drivers/acpi/acpica/exfldio.c
+@@ -269,17 +269,15 @@ acpi_ex_access_region(union acpi_operand_object *obj_desc,
+ 	}
+ 
+ 	ACPI_DEBUG_PRINT_RAW((ACPI_DB_BFIELD,
+-			      " Region [%s:%X], Width %X, ByteBase %X, Offset %X at %p\n",
++			      " Region [%s:%X], Width %X, ByteBase %X, Offset %X at %8.8X%8.8X\n",
+ 			      acpi_ut_get_region_name(rgn_desc->region.
+ 						      space_id),
+ 			      rgn_desc->region.space_id,
+ 			      obj_desc->common_field.access_byte_width,
+ 			      obj_desc->common_field.base_byte_offset,
+-			      field_datum_byte_offset, ACPI_CAST_PTR(void,
+-								     (rgn_desc->
+-								      region.
+-								      address +
+-								      region_offset))));
++			      field_datum_byte_offset,
++			      ACPI_FORMAT_UINT64(rgn_desc->region.address +
++						 region_offset)));
+ 
+ 	/* Invoke the appropriate address_space/op_region handler */
+ 
+diff --git a/drivers/acpi/acpica/exregion.c b/drivers/acpi/acpica/exregion.c
+index 182abaf045e1..e90c59d35a16 100644
+--- a/drivers/acpi/acpica/exregion.c
++++ b/drivers/acpi/acpica/exregion.c
+@@ -176,7 +176,7 @@ acpi_ex_system_memory_space_handler(u32 function,
+ 		if (!mem_info->mapped_logical_address) {
+ 			ACPI_ERROR((AE_INFO,
+ 				    "Could not map memory at 0x%8.8X%8.8X, size %u",
+-				    ACPI_FORMAT_NATIVE_UINT(address),
++				    ACPI_FORMAT_UINT64(address),
+ 				    (u32) map_length));
+ 			mem_info->mapped_length = 0;
+ 			return_ACPI_STATUS(AE_NO_MEMORY);
+@@ -197,8 +197,7 @@ acpi_ex_system_memory_space_handler(u32 function,
+ 
+ 	ACPI_DEBUG_PRINT((ACPI_DB_INFO,
+ 			  "System-Memory (width %u) R/W %u Address=%8.8X%8.8X\n",
+-			  bit_width, function,
+-			  ACPI_FORMAT_NATIVE_UINT(address)));
++			  bit_width, function, ACPI_FORMAT_UINT64(address)));
+ 
+ 	/*
+ 	 * Perform the memory read or write
+@@ -300,8 +299,7 @@ acpi_ex_system_io_space_handler(u32 function,
+ 
+ 	ACPI_DEBUG_PRINT((ACPI_DB_INFO,
+ 			  "System-IO (width %u) R/W %u Address=%8.8X%8.8X\n",
+-			  bit_width, function,
+-			  ACPI_FORMAT_NATIVE_UINT(address)));
++			  bit_width, function, ACPI_FORMAT_UINT64(address)));
+ 
+ 	/* Decode the function parameter */
+ 
+diff --git a/drivers/acpi/acpica/hwvalid.c b/drivers/acpi/acpica/hwvalid.c
+index eab70d58852a..fae57584a182 100644
+--- a/drivers/acpi/acpica/hwvalid.c
++++ b/drivers/acpi/acpica/hwvalid.c
+@@ -142,17 +142,17 @@ acpi_hw_validate_io_request(acpi_io_address address, u32 bit_width)
+ 	byte_width = ACPI_DIV_8(bit_width);
+ 	last_address = address + byte_width - 1;
+ 
+-	ACPI_DEBUG_PRINT((ACPI_DB_IO, "Address %p LastAddress %p Length %X",
+-			  ACPI_CAST_PTR(void, address), ACPI_CAST_PTR(void,
+-								      last_address),
+-			  byte_width));
++	ACPI_DEBUG_PRINT((ACPI_DB_IO,
++			  "Address %8.8X%8.8X LastAddress %8.8X%8.8X Length %X",
++			  ACPI_FORMAT_UINT64(address),
++			  ACPI_FORMAT_UINT64(last_address), byte_width));
+ 
+ 	/* Maximum 16-bit address in I/O space */
+ 
+ 	if (last_address > ACPI_UINT16_MAX) {
+ 		ACPI_ERROR((AE_INFO,
+-			    "Illegal I/O port address/length above 64K: %p/0x%X",
+-			    ACPI_CAST_PTR(void, address), byte_width));
++			    "Illegal I/O port address/length above 64K: %8.8X%8.8X/0x%X",
++			    ACPI_FORMAT_UINT64(address), byte_width));
+ 		return_ACPI_STATUS(AE_LIMIT);
+ 	}
+ 
+@@ -181,8 +181,8 @@ acpi_hw_validate_io_request(acpi_io_address address, u32 bit_width)
+ 
+ 			if (acpi_gbl_osi_data >= port_info->osi_dependency) {
+ 				ACPI_DEBUG_PRINT((ACPI_DB_IO,
+-						  "Denied AML access to port 0x%p/%X (%s 0x%.4X-0x%.4X)",
+-						  ACPI_CAST_PTR(void, address),
++						  "Denied AML access to port 0x%8.8X%8.8X/%X (%s 0x%.4X-0x%.4X)",
++						  ACPI_FORMAT_UINT64(address),
+ 						  byte_width, port_info->name,
+ 						  port_info->start,
+ 						  port_info->end));
+diff --git a/drivers/acpi/acpica/nsdump.c b/drivers/acpi/acpica/nsdump.c
+index ce6e97326205..20ae5b9bb9f2 100644
+--- a/drivers/acpi/acpica/nsdump.c
++++ b/drivers/acpi/acpica/nsdump.c
+@@ -258,12 +258,11 @@ acpi_ns_dump_one_object(acpi_handle obj_handle,
+ 		switch (type) {
+ 		case ACPI_TYPE_PROCESSOR:
+ 
+-			acpi_os_printf("ID %02X Len %02X Addr %p\n",
++			acpi_os_printf("ID %02X Len %02X Addr %8.8X%8.8X\n",
+ 				       obj_desc->processor.proc_id,
+ 				       obj_desc->processor.length,
+-				       ACPI_CAST_PTR(void,
+-						     obj_desc->processor.
+-						     address));
++				       ACPI_FORMAT_UINT64(obj_desc->processor.
++							  address));
+ 			break;
+ 
+ 		case ACPI_TYPE_DEVICE:
+@@ -334,8 +333,9 @@ acpi_ns_dump_one_object(acpi_handle obj_handle,
+ 							       space_id));
+ 			if (obj_desc->region.flags & AOPOBJ_DATA_VALID) {
+ 				acpi_os_printf(" Addr %8.8X%8.8X Len %.4X\n",
+-					       ACPI_FORMAT_NATIVE_UINT
+-					       (obj_desc->region.address),
++					       ACPI_FORMAT_UINT64(obj_desc->
++								  region.
++								  address),
+ 					       obj_desc->region.length);
+ 			} else {
+ 				acpi_os_printf
+diff --git a/drivers/acpi/acpica/tbutils.c b/drivers/acpi/acpica/tbutils.c
+index ce3d5db39a9c..5c67b2840c58 100644
+--- a/drivers/acpi/acpica/tbutils.c
++++ b/drivers/acpi/acpica/tbutils.c
+@@ -246,16 +246,12 @@ acpi_tb_print_table_header(acpi_physical_address address,
+ {
+ 	struct acpi_table_header local_header;
+ 
+-	/*
+-	 * The reason that the Address is cast to a void pointer is so that we
+-	 * can use %p which will work properly on both 32-bit and 64-bit hosts.
+-	 */
+ 	if (ACPI_COMPARE_NAME(header->signature, ACPI_SIG_FACS)) {
+ 
+ 		/* FACS only has signature and length fields */
+ 
+-		ACPI_INFO((AE_INFO, "%4.4s %p %05X",
+-			   header->signature, ACPI_CAST_PTR(void, address),
++		ACPI_INFO((AE_INFO, "%4.4s 0x%8.8X%8.8X %05X",
++			   header->signature, ACPI_FORMAT_UINT64(address),
+ 			   header->length));
+ 	} else if (ACPI_COMPARE_NAME(header->signature, ACPI_SIG_RSDP)) {
+ 
+@@ -266,8 +262,8 @@ acpi_tb_print_table_header(acpi_physical_address address,
+ 					  header)->oem_id, ACPI_OEM_ID_SIZE);
+ 		acpi_tb_fix_string(local_header.oem_id, ACPI_OEM_ID_SIZE);
+ 
+-		ACPI_INFO((AE_INFO, "RSDP %p %05X (v%.2d %6.6s)",
+-			   ACPI_CAST_PTR (void, address),
++		ACPI_INFO((AE_INFO, "RSDP 0x%8.8X%8.8X %05X (v%.2d %6.6s)",
++			   ACPI_FORMAT_UINT64(address),
+ 			   (ACPI_CAST_PTR(struct acpi_table_rsdp, header)->
+ 			    revision >
+ 			    0) ? ACPI_CAST_PTR(struct acpi_table_rsdp,
+@@ -281,8 +277,8 @@ acpi_tb_print_table_header(acpi_physical_address address,
+ 		acpi_tb_cleanup_table_header(&local_header, header);
+ 
+ 		ACPI_INFO((AE_INFO,
+-			   "%4.4s %p %05X (v%.2d %6.6s %8.8s %08X %4.4s %08X)",
+-			   local_header.signature, ACPI_CAST_PTR(void, address),
++			   "%-4.4s 0x%8.8X%8.8X %05X (v%.2d %-6.6s %-8.8s %08X %-4.4s %08X)",
++			   local_header.signature, ACPI_FORMAT_UINT64(address),
+ 			   local_header.length, local_header.revision,
+ 			   local_header.oem_id, local_header.oem_table_id,
+ 			   local_header.oem_revision,
+@@ -474,8 +470,8 @@ acpi_tb_install_table(acpi_physical_address address,
+ 	table = acpi_os_map_memory(address, sizeof(struct acpi_table_header));
+ 	if (!table) {
+ 		ACPI_ERROR((AE_INFO,
+-			    "Could not map memory for table [%s] at %p",
+-			    signature, ACPI_CAST_PTR(void, address)));
++			    "Could not map memory for table [%s] at %8.8X%8.8X",
++			    signature, ACPI_FORMAT_UINT64(address)));
+ 		return;
+ 	}
+ 
+diff --git a/drivers/acpi/acpica/utaddress.c b/drivers/acpi/acpica/utaddress.c
+index e0a2e2779c2e..3c7770d75773 100644
+--- a/drivers/acpi/acpica/utaddress.c
++++ b/drivers/acpi/acpica/utaddress.c
+@@ -107,10 +107,10 @@ acpi_ut_add_address_range(acpi_adr_space_type space_id,
+ 	acpi_gbl_address_range_list[space_id] = range_info;
+ 
+ 	ACPI_DEBUG_PRINT((ACPI_DB_NAMES,
+-			  "\nAdded [%4.4s] address range: 0x%p-0x%p\n",
++			  "\nAdded [%4.4s] address range: 0x%8.8X%8.8X-0x%8.8X%8.8X\n",
+ 			  acpi_ut_get_node_name(range_info->region_node),
+-			  ACPI_CAST_PTR(void, address),
+-			  ACPI_CAST_PTR(void, range_info->end_address)));
++			  ACPI_FORMAT_UINT64(address),
++			  ACPI_FORMAT_UINT64(range_info->end_address)));
+ 
+ 	(void)acpi_ut_release_mutex(ACPI_MTX_NAMESPACE);
+ 	return_ACPI_STATUS(AE_OK);
+@@ -160,15 +160,13 @@ acpi_ut_remove_address_range(acpi_adr_space_type space_id,
+ 			}
+ 
+ 			ACPI_DEBUG_PRINT((ACPI_DB_NAMES,
+-					  "\nRemoved [%4.4s] address range: 0x%p-0x%p\n",
++					  "\nRemoved [%4.4s] address range: 0x%8.8X%8.8X-0x%8.8X%8.8X\n",
+ 					  acpi_ut_get_node_name(range_info->
+ 								region_node),
+-					  ACPI_CAST_PTR(void,
+-							range_info->
+-							start_address),
+-					  ACPI_CAST_PTR(void,
+-							range_info->
+-							end_address)));
++					  ACPI_FORMAT_UINT64(range_info->
++							     start_address),
++					  ACPI_FORMAT_UINT64(range_info->
++							     end_address)));
+ 
+ 			ACPI_FREE(range_info);
+ 			return_VOID;
+@@ -244,9 +242,9 @@ acpi_ut_check_address_range(acpi_adr_space_type space_id,
+ 								  region_node);
+ 
+ 				ACPI_WARNING((AE_INFO,
+-					      "0x%p-0x%p %s conflicts with Region %s %d",
+-					      ACPI_CAST_PTR(void, address),
+-					      ACPI_CAST_PTR(void, end_address),
++					      "0x%8.8X%8.8X-0x%8.8X%8.8X %s conflicts with Region %s %d",
++					      ACPI_FORMAT_UINT64(address),
++					      ACPI_FORMAT_UINT64(end_address),
+ 					      acpi_ut_get_region_name(space_id),
+ 					      pathname, overlap_count));
+ 				ACPI_FREE(pathname);
+diff --git a/drivers/bus/mvebu-mbus.c b/drivers/bus/mvebu-mbus.c
+index 711dcf4a0313..7c437826c2f9 100644
+--- a/drivers/bus/mvebu-mbus.c
++++ b/drivers/bus/mvebu-mbus.c
+@@ -838,7 +838,7 @@ fs_initcall(mvebu_mbus_debugfs_init);
+ int __init mvebu_mbus_init(const char *soc, phys_addr_t mbuswins_phys_base,
+ 			   size_t mbuswins_size,
+ 			   phys_addr_t sdramwins_phys_base,
+-			   size_t sdramwins_size)
++			   size_t sdramwins_size, int is_coherent)
+ {
+ 	struct mvebu_mbus_state *mbus = &mbus_state;
+ 	const struct of_device_id *of_id;
+@@ -865,8 +865,7 @@ int __init mvebu_mbus_init(const char *soc, phys_addr_t mbuswins_phys_base,
+ 		return -ENOMEM;
+ 	}
+ 
+-	if (of_find_compatible_node(NULL, NULL, "marvell,coherency-fabric"))
+-		mbus->hw_io_coherency = 1;
++	mbus->hw_io_coherency = is_coherent;
+ 
+ 	for (win = 0; win < mbus->soc->num_wins; win++)
+ 		mvebu_mbus_disable_window(mbus, win);
+diff --git a/drivers/edac/sb_edac.c b/drivers/edac/sb_edac.c
+index f505e4ca6d58..3bdefbfb4377 100644
+--- a/drivers/edac/sb_edac.c
++++ b/drivers/edac/sb_edac.c
+@@ -623,7 +623,7 @@ static void get_memory_layout(const struct mem_ctl_info *mci)
+ 	u32 reg;
+ 	u64 limit, prv = 0;
+ 	u64 tmp_mb;
+-	u32 mb, kb;
++	u32 gb, mb;
+ 	u32 rir_way;
+ 
+ 	/*
+@@ -636,8 +636,9 @@ static void get_memory_layout(const struct mem_ctl_info *mci)
+ 	pvt->tolm = GET_TOLM(reg);
+ 	tmp_mb = (1 + pvt->tolm) >> 20;
+ 
+-	mb = div_u64_rem(tmp_mb, 1000, &kb);
+-	edac_dbg(0, "TOLM: %u.%03u GB (0x%016Lx)\n", mb, kb, (u64)pvt->tolm);
++	gb = div_u64_rem(tmp_mb, 1024, &mb);
++	edac_dbg(0, "TOLM: %u.%03u GB (0x%016Lx)\n",
++		gb, (mb*1000)/1024, (u64)pvt->tolm);
+ 
+ 	/* Address range is already 45:25 */
+ 	pci_read_config_dword(pvt->pci_sad1, TOHM,
+@@ -645,8 +646,9 @@ static void get_memory_layout(const struct mem_ctl_info *mci)
+ 	pvt->tohm = GET_TOHM(reg);
+ 	tmp_mb = (1 + pvt->tohm) >> 20;
+ 
+-	mb = div_u64_rem(tmp_mb, 1000, &kb);
+-	edac_dbg(0, "TOHM: %u.%03u GB (0x%016Lx)\n", mb, kb, (u64)pvt->tohm);
++	gb = div_u64_rem(tmp_mb, 1024, &mb);
++	edac_dbg(0, "TOHM: %u.%03u GB (0x%016Lx)\n",
++		gb, (mb*1000)/1024, (u64)pvt->tohm);
+ 
+ 	/*
+ 	 * Step 2) Get SAD range and SAD Interleave list
+@@ -668,11 +670,11 @@ static void get_memory_layout(const struct mem_ctl_info *mci)
+ 			break;
+ 
+ 		tmp_mb = (limit + 1) >> 20;
+-		mb = div_u64_rem(tmp_mb, 1000, &kb);
++		gb = div_u64_rem(tmp_mb, 1024, &mb);
+ 		edac_dbg(0, "SAD#%d %s up to %u.%03u GB (0x%016Lx) Interleave: %s reg=0x%08x\n",
+ 			 n_sads,
+ 			 get_dram_attr(reg),
+-			 mb, kb,
++			 gb, (mb*1000)/1024,
+ 			 ((u64)tmp_mb) << 20L,
+ 			 INTERLEAVE_MODE(reg) ? "8:6" : "[8:6]XOR[18:16]",
+ 			 reg);
+@@ -702,9 +704,9 @@ static void get_memory_layout(const struct mem_ctl_info *mci)
+ 			break;
+ 		tmp_mb = (limit + 1) >> 20;
+ 
+-		mb = div_u64_rem(tmp_mb, 1000, &kb);
++		gb = div_u64_rem(tmp_mb, 1024, &mb);
+ 		edac_dbg(0, "TAD#%d: up to %u.%03u GB (0x%016Lx), socket interleave %d, memory interleave %d, TGT: %d, %d, %d, %d, reg=0x%08x\n",
+-			 n_tads, mb, kb,
++			 n_tads, gb, (mb*1000)/1024,
+ 			 ((u64)tmp_mb) << 20L,
+ 			 (u32)TAD_SOCK(reg),
+ 			 (u32)TAD_CH(reg),
+@@ -727,10 +729,10 @@ static void get_memory_layout(const struct mem_ctl_info *mci)
+ 					      tad_ch_nilv_offset[j],
+ 					      &reg);
+ 			tmp_mb = TAD_OFFSET(reg) >> 20;
+-			mb = div_u64_rem(tmp_mb, 1000, &kb);
++			gb = div_u64_rem(tmp_mb, 1024, &mb);
+ 			edac_dbg(0, "TAD CH#%d, offset #%d: %u.%03u GB (0x%016Lx), reg=0x%08x\n",
+ 				 i, j,
+-				 mb, kb,
++				 gb, (mb*1000)/1024,
+ 				 ((u64)tmp_mb) << 20L,
+ 				 reg);
+ 		}
+@@ -752,10 +754,10 @@ static void get_memory_layout(const struct mem_ctl_info *mci)
+ 
+ 			tmp_mb = RIR_LIMIT(reg) >> 20;
+ 			rir_way = 1 << RIR_WAY(reg);
+-			mb = div_u64_rem(tmp_mb, 1000, &kb);
++			gb = div_u64_rem(tmp_mb, 1024, &mb);
+ 			edac_dbg(0, "CH#%d RIR#%d, limit: %u.%03u GB (0x%016Lx), way: %d, reg=0x%08x\n",
+ 				 i, j,
+-				 mb, kb,
++				 gb, (mb*1000)/1024,
+ 				 ((u64)tmp_mb) << 20L,
+ 				 rir_way,
+ 				 reg);
+@@ -766,10 +768,10 @@ static void get_memory_layout(const struct mem_ctl_info *mci)
+ 						      &reg);
+ 				tmp_mb = RIR_OFFSET(reg) << 6;
+ 
+-				mb = div_u64_rem(tmp_mb, 1000, &kb);
++				gb = div_u64_rem(tmp_mb, 1024, &mb);
+ 				edac_dbg(0, "CH#%d RIR#%d INTL#%d, offset %u.%03u GB (0x%016Lx), tgt: %d, reg=0x%08x\n",
+ 					 i, j, k,
+-					 mb, kb,
++					 gb, (mb*1000)/1024,
+ 					 ((u64)tmp_mb) << 20L,
+ 					 (u32)RIR_RNK_TGT(reg),
+ 					 reg);
+@@ -806,7 +808,7 @@ static int get_memory_error_data(struct mem_ctl_info *mci,
+ 	u8			ch_way,sck_way;
+ 	u32			tad_offset;
+ 	u32			rir_way;
+-	u32			mb, kb;
++	u32			mb, gb;
+ 	u64			ch_addr, offset, limit, prv = 0;
+ 
+ 
+@@ -1022,10 +1024,10 @@ static int get_memory_error_data(struct mem_ctl_info *mci,
+ 			continue;
+ 
+ 		limit = RIR_LIMIT(reg);
+-		mb = div_u64_rem(limit >> 20, 1000, &kb);
++		gb = div_u64_rem(limit >> 20, 1024, &mb);
+ 		edac_dbg(0, "RIR#%d, limit: %u.%03u GB (0x%016Lx), way: %d\n",
+ 			 n_rir,
+-			 mb, kb,
++			 gb, (mb*1000)/1024,
+ 			 limit,
+ 			 1 << RIR_WAY(reg));
+ 		if  (ch_addr <= limit)
+diff --git a/drivers/scsi/hpsa.c b/drivers/scsi/hpsa.c
+index 62ed744bbe06..a6cdf17e27dc 100644
+--- a/drivers/scsi/hpsa.c
++++ b/drivers/scsi/hpsa.c
+@@ -3898,10 +3898,6 @@ static int hpsa_kdump_hard_reset_controller(struct pci_dev *pdev)
+ 
+ 	/* Save the PCI command register */
+ 	pci_read_config_word(pdev, 4, &command_register);
+-	/* Turn the board off.  This is so that later pci_restore_state()
+-	 * won't turn the board on before the rest of config space is ready.
+-	 */
+-	pci_disable_device(pdev);
+ 	pci_save_state(pdev);
+ 
+ 	/* find the first memory BAR, so we can find the cfg table */
+@@ -3949,11 +3945,6 @@ static int hpsa_kdump_hard_reset_controller(struct pci_dev *pdev)
+ 		goto unmap_cfgtable;
+ 
+ 	pci_restore_state(pdev);
+-	rc = pci_enable_device(pdev);
+-	if (rc) {
+-		dev_warn(&pdev->dev, "failed to enable device.\n");
+-		goto unmap_cfgtable;
+-	}
+ 	pci_write_config_word(pdev, 4, command_register);
+ 
+ 	/* Some devices (notably the HP Smart Array 5i Controller)
+@@ -4448,6 +4439,23 @@ static int hpsa_init_reset_devices(struct pci_dev *pdev)
+ 	if (!reset_devices)
+ 		return 0;
+ 
++	/* kdump kernel is loading, we don't know in which state is
++	 * the pci interface. The dev->enable_cnt is equal zero
++	 * so we call enable+disable, wait a while and switch it on.
++	 */
++	rc = pci_enable_device(pdev);
++	if (rc) {
++		dev_warn(&pdev->dev, "Failed to enable PCI device\n");
++		return -ENODEV;
++	}
++	pci_disable_device(pdev);
++	msleep(260);			/* a randomly chosen number */
++	rc = pci_enable_device(pdev);
++	if (rc) {
++		dev_warn(&pdev->dev, "failed to enable device.\n");
++		return -ENODEV;
++	}
++	pci_set_master(pdev);
+ 	/* Reset the controller with a PCI power-cycle or via doorbell */
+ 	rc = hpsa_kdump_hard_reset_controller(pdev);
+ 
+@@ -4456,10 +4464,11 @@ static int hpsa_init_reset_devices(struct pci_dev *pdev)
+ 	 * "performant mode".  Or, it might be 640x, which can't reset
+ 	 * due to concerns about shared bbwc between 6402/6404 pair.
+ 	 */
+-	if (rc == -ENOTSUPP)
+-		return rc; /* just try to do the kdump anyhow. */
+-	if (rc)
+-		return -ENODEV;
++	if (rc) {
++		if (rc != -ENOTSUPP) /* just try to do the kdump anyhow. */
++			rc = -ENODEV;
++		goto out_disable;
++	}
+ 
+ 	/* Now try to get the controller to respond to a no-op */
+ 	dev_warn(&pdev->dev, "Waiting for controller to respond to no-op\n");
+@@ -4470,7 +4479,11 @@ static int hpsa_init_reset_devices(struct pci_dev *pdev)
+ 			dev_warn(&pdev->dev, "no-op failed%s\n",
+ 					(i < 11 ? "; re-trying" : ""));
+ 	}
+-	return 0;
++
++out_disable:
++
++	pci_disable_device(pdev);
++	return rc;
+ }
+ 
+ static int hpsa_allocate_cmd_pool(struct ctlr_info *h)
+@@ -4613,6 +4626,7 @@ static void hpsa_undo_allocations_after_kdump_soft_reset(struct ctlr_info *h)
+ 		iounmap(h->transtable);
+ 	if (h->cfgtable)
+ 		iounmap(h->cfgtable);
++	pci_disable_device(h->pdev);
+ 	pci_release_regions(h->pdev);
+ 	kfree(h);
+ }
+
+diff --git a/include/linux/mbus.h b/include/linux/mbus.h
+index dba482e31a13..e80b9c7ec8da 100644
+--- a/include/linux/mbus.h
++++ b/include/linux/mbus.h
+@@ -67,6 +67,6 @@ int mvebu_mbus_add_window(const char *devname, phys_addr_t base,
+ int mvebu_mbus_del_window(phys_addr_t base, size_t size);
+ int mvebu_mbus_init(const char *soc, phys_addr_t mbus_phys_base,
+ 		    size_t mbus_size, phys_addr_t sdram_phys_base,
+-		    size_t sdram_size);
++		    size_t sdram_size, int is_coherent);
+ 
+ #endif /* __LINUX_MBUS_H */
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 00c1d4f45072..7cf305d036db 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -2203,15 +2203,15 @@ static inline bool thread_group_leader(struct task_struct *p)
+  * all we care about is that we have a task with the appropriate
+  * pid, we don't actually care if we have the right task.
+  */
+-static inline int has_group_leader_pid(struct task_struct *p)
++static inline bool has_group_leader_pid(struct task_struct *p)
+ {
+-	return p->pid == p->tgid;
++	return task_pid(p) == p->signal->leader_pid;
+ }
+ 
+ static inline
+-int same_thread_group(struct task_struct *p1, struct task_struct *p2)
++bool same_thread_group(struct task_struct *p1, struct task_struct *p2)
+ {
+-	return p1->tgid == p2->tgid;
++	return p1->signal == p2->signal;
+ }
+ 
+ static inline struct task_struct *next_thread(const struct task_struct *p)
+diff --git a/include/net/ip6_fib.h b/include/net/ip6_fib.h
+index 665e0cee59bd..5e661a979694 100644
+--- a/include/net/ip6_fib.h
++++ b/include/net/ip6_fib.h
+@@ -301,7 +301,7 @@ extern void			inet6_rt_notify(int event, struct rt6_info *rt,
+ 						struct nl_info *info);
+ 
+ extern void			fib6_run_gc(unsigned long expires,
+-					    struct net *net);
++					    struct net *net, bool force);
+ 
+ extern void			fib6_gc_cleanup(void);
+ 
+diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+index 118323bc8529..30ab20623bca 100644
+--- a/kernel/ptrace.c
++++ b/kernel/ptrace.c
+@@ -236,7 +236,7 @@ static int __ptrace_may_access(struct task_struct *task, unsigned int mode)
+ 	 */
+ 	int dumpable = 0;
+ 	/* Don't let security modules deny introspection */
+-	if (task == current)
++	if (same_thread_group(task, current))
+ 		return 0;
+ 	rcu_read_lock();
+ 	tcred = __task_cred(task);
+diff --git a/net/ipv4/xfrm4_policy.c b/net/ipv4/xfrm4_policy.c
+index 9a459be24af7..9b5b5ddf8cd4 100644
+--- a/net/ipv4/xfrm4_policy.c
++++ b/net/ipv4/xfrm4_policy.c
+@@ -235,7 +235,7 @@ static struct dst_ops xfrm4_dst_ops = {
+ 	.destroy =		xfrm4_dst_destroy,
+ 	.ifdown =		xfrm4_dst_ifdown,
+ 	.local_out =		__ip_local_out,
+-	.gc_thresh =		1024,
++	.gc_thresh =		32768,
+ };
+ 
+ static struct xfrm_policy_afinfo xfrm4_policy_afinfo = {
+diff --git a/net/ipv6/ip6_fib.c b/net/ipv6/ip6_fib.c
+index ceeb9458bb60..46458ee31939 100644
+--- a/net/ipv6/ip6_fib.c
++++ b/net/ipv6/ip6_fib.c
+@@ -1648,27 +1648,28 @@ static int fib6_age(struct rt6_info *rt, void *arg)
+ 
+ static DEFINE_SPINLOCK(fib6_gc_lock);
+ 
+-void fib6_run_gc(unsigned long expires, struct net *net)
++void fib6_run_gc(unsigned long expires, struct net *net, bool force)
+ {
+-	if (expires != ~0UL) {
++	unsigned long now;
++
++	if (force) {
+ 		spin_lock_bh(&fib6_gc_lock);
+-		gc_args.timeout = expires ? (int)expires :
+-			net->ipv6.sysctl.ip6_rt_gc_interval;
+-	} else {
+-		if (!spin_trylock_bh(&fib6_gc_lock)) {
+-			mod_timer(&net->ipv6.ip6_fib_timer, jiffies + HZ);
+-			return;
+-		}
+-		gc_args.timeout = net->ipv6.sysctl.ip6_rt_gc_interval;
++	} else if (!spin_trylock_bh(&fib6_gc_lock)) {
++		mod_timer(&net->ipv6.ip6_fib_timer, jiffies + HZ);
++		return;
+ 	}
++	gc_args.timeout = expires ? (int)expires :
++			  net->ipv6.sysctl.ip6_rt_gc_interval;
+ 
+ 	gc_args.more = icmp6_dst_gc();
+ 
+ 	fib6_clean_all(net, fib6_age, 0, NULL);
++	now = jiffies;
++	net->ipv6.ip6_rt_last_gc = now;
+ 
+ 	if (gc_args.more)
+ 		mod_timer(&net->ipv6.ip6_fib_timer,
+-			  round_jiffies(jiffies
++			  round_jiffies(now
+ 					+ net->ipv6.sysctl.ip6_rt_gc_interval));
+ 	else
+ 		del_timer(&net->ipv6.ip6_fib_timer);
+@@ -1677,7 +1678,7 @@ void fib6_run_gc(unsigned long expires, struct net *net)
+ 
+ static void fib6_gc_timer_cb(unsigned long arg)
+ {
+-	fib6_run_gc(0, (struct net *)arg);
++	fib6_run_gc(0, (struct net *)arg, true);
+ }
+ 
+ static int __net_init fib6_net_init(struct net *net)
+diff --git a/net/ipv6/ndisc.c b/net/ipv6/ndisc.c
+index 05f361338c2e..deedf7ddbc6e 100644
+--- a/net/ipv6/ndisc.c
++++ b/net/ipv6/ndisc.c
+@@ -1584,7 +1584,7 @@ static int ndisc_netdev_event(struct notifier_block *this, unsigned long event,
+ 	switch (event) {
+ 	case NETDEV_CHANGEADDR:
+ 		neigh_changeaddr(&nd_tbl, dev);
+-		fib6_run_gc(~0UL, net);
++		fib6_run_gc(0, net, false);
+ 		idev = in6_dev_get(dev);
+ 		if (!idev)
+ 			break;
+@@ -1594,7 +1594,7 @@ static int ndisc_netdev_event(struct notifier_block *this, unsigned long event,
+ 		break;
+ 	case NETDEV_DOWN:
+ 		neigh_ifdown(&nd_tbl, dev);
+-		fib6_run_gc(~0UL, net);
++		fib6_run_gc(0, net, false);
+ 		break;
+ 	case NETDEV_NOTIFY_PEERS:
+ 		ndisc_send_unsol_na(dev);
+diff --git a/net/ipv6/route.c b/net/ipv6/route.c
+index d94d224f7e68..6ebefd46f718 100644
+--- a/net/ipv6/route.c
++++ b/net/ipv6/route.c
+@@ -1334,7 +1334,6 @@ static void icmp6_clean_all(int (*func)(struct rt6_info *rt, void *arg),
+ 
+ static int ip6_dst_gc(struct dst_ops *ops)
+ {
+-	unsigned long now = jiffies;
+ 	struct net *net = container_of(ops, struct net, ipv6.ip6_dst_ops);
+ 	int rt_min_interval = net->ipv6.sysctl.ip6_rt_gc_min_interval;
+ 	int rt_max_size = net->ipv6.sysctl.ip6_rt_max_size;
+@@ -1344,13 +1343,12 @@ static int ip6_dst_gc(struct dst_ops *ops)
+ 	int entries;
+ 
+ 	entries = dst_entries_get_fast(ops);
+-	if (time_after(rt_last_gc + rt_min_interval, now) &&
++	if (time_after(rt_last_gc + rt_min_interval, jiffies) &&
+ 	    entries <= rt_max_size)
+ 		goto out;
+ 
+ 	net->ipv6.ip6_rt_gc_expire++;
+-	fib6_run_gc(net->ipv6.ip6_rt_gc_expire, net);
+-	net->ipv6.ip6_rt_last_gc = now;
++	fib6_run_gc(net->ipv6.ip6_rt_gc_expire, net, entries > rt_max_size);
+ 	entries = dst_entries_get_slow(ops);
+ 	if (entries < ops->gc_thresh)
+ 		net->ipv6.ip6_rt_gc_expire = rt_gc_timeout>>1;
+@@ -2849,7 +2847,7 @@ int ipv6_sysctl_rtcache_flush(ctl_table *ctl, int write,
+ 	net = (struct net *)ctl->extra1;
+ 	delay = net->ipv6.sysctl.flush_delay;
+ 	proc_dointvec(ctl, write, buffer, lenp, ppos);
+-	fib6_run_gc(delay <= 0 ? ~0UL : (unsigned long)delay, net);
++	fib6_run_gc(delay <= 0 ? 0 : (unsigned long)delay, net, delay > 0);
+ 	return 0;
+ }
+ 
+diff --git a/net/ipv6/xfrm6_policy.c b/net/ipv6/xfrm6_policy.c
+index 23ed03d786c8..1c2e0c9ba8a1 100644
+--- a/net/ipv6/xfrm6_policy.c
++++ b/net/ipv6/xfrm6_policy.c
+@@ -284,7 +284,7 @@ static struct dst_ops xfrm6_dst_ops = {
+ 	.destroy =		xfrm6_dst_destroy,
+ 	.ifdown =		xfrm6_dst_ifdown,
+ 	.local_out =		__ip6_local_out,
+-	.gc_thresh =		1024,
++	.gc_thresh =		32768,
+ };
+ 
+ static struct xfrm_policy_afinfo xfrm6_policy_afinfo = {
+diff --git a/net/netfilter/nfnetlink_cthelper.c b/net/netfilter/nfnetlink_cthelper.c
+index a191b6db657e..3b283edec027 100644
+--- a/net/netfilter/nfnetlink_cthelper.c
++++ b/net/netfilter/nfnetlink_cthelper.c
+@@ -74,6 +74,9 @@ nfnl_cthelper_parse_tuple(struct nf_conntrack_tuple *tuple,
+ 	if (!tb[NFCTH_TUPLE_L3PROTONUM] || !tb[NFCTH_TUPLE_L4PROTONUM])
+ 		return -EINVAL;
+ 
++	/* Not all fields are initialized so first zero the tuple */
++	memset(tuple, 0, sizeof(struct nf_conntrack_tuple));
++
+ 	tuple->src.l3num = ntohs(nla_get_be16(tb[NFCTH_TUPLE_L3PROTONUM]));
+ 	tuple->dst.protonum = nla_get_u8(tb[NFCTH_TUPLE_L4PROTONUM]);
+ 
+@@ -83,7 +86,7 @@ nfnl_cthelper_parse_tuple(struct nf_conntrack_tuple *tuple,
+ static int
+ nfnl_cthelper_from_nlattr(struct nlattr *attr, struct nf_conn *ct)
+ {
+-	const struct nf_conn_help *help = nfct_help(ct);
++	struct nf_conn_help *help = nfct_help(ct);
+ 
+ 	if (attr == NULL)
+ 		return -EINVAL;
+@@ -91,7 +94,7 @@ nfnl_cthelper_from_nlattr(struct nlattr *attr, struct nf_conn *ct)
+ 	if (help->helper->data_len == 0)
+ 		return -EINVAL;
+ 
+-	memcpy(&help->data, nla_data(attr), help->helper->data_len);
++	memcpy(help->data, nla_data(attr), help->helper->data_len);
+ 	return 0;
+ }
+ 
