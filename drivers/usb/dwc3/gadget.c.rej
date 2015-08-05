@@ -1,0 +1,20 @@
+--- drivers/usb/dwc3/gadget.c
++++ drivers/usb/dwc3/gadget.c
+@@ -319,6 +319,8 @@
+ 		if (!(reg & DWC3_DGCMD_CMDACT)) {
+ 			dev_vdbg(dwc->dev, "Command Complete --> %d\n",
+ 					DWC3_DGCMD_STATUS(reg));
++			if (DWC3_DGCMD_STATUS(reg))
++				return -EINVAL;
+ 			return 0;
+ 		}
+ 
+@@ -355,6 +357,8 @@
+ 		if (!(reg & DWC3_DEPCMD_CMDACT)) {
+ 			dev_vdbg(dwc->dev, "Command Complete --> %d\n",
+ 					DWC3_DEPCMD_STATUS(reg));
++			if (DWC3_DEPCMD_STATUS(reg))
++				return -EINVAL;
+ 			return 0;
+ 		}
+ 

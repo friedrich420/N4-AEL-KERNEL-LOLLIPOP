@@ -41,6 +41,8 @@ static struct workqueue_struct *isert_rx_wq;
 static struct workqueue_struct *isert_comp_wq;
 static struct kmem_cache *isert_cmd_cache;
 
+static void isert_release_work(struct work_struct *work);
+
 static void
 isert_qp_event_callback(struct ib_event *e, void *context)
 {
@@ -185,7 +187,7 @@ fail:
 static void
 isert_free_rx_descriptors(struct isert_conn *isert_conn)
 {
-	struct ib_device *ib_dev = isert_conn->conn_cm_id->device;
+	struct ib_device *ib_dev = isert_conn->conn_device->ib_device;
 	struct iser_rx_desc *rx_desc;
 	int i;
 
@@ -404,6 +406,7 @@ isert_connect_request(struct rdma_cm_id *cma_id, struct rdma_cm_event *event)
 	init_completion(&isert_conn->conn_wait_comp_err);
 	kref_init(&isert_conn->conn_kref);
 	mutex_init(&isert_conn->conn_mutex);
+	INIT_WORK(&isert_conn->release_work, isert_release_work);
 
 	cma_id->context = isert_conn;
 	isert_conn->conn_cm_id = cma_id;
@@ -589,6 +592,7 @@ static int
 isert_disconnected_handler(struct rdma_cm_id *cma_id, bool disconnect)
 {
 	struct isert_conn *isert_conn;
+	bool terminating = false;
 
 	if (!cma_id->qp) {
 		struct isert_np *isert_np = cma_id->context;

@@ -1,0 +1,17 @@
+--- drivers/mmc/card/block.c
++++ drivers/mmc/card/block.c
+@@ -1835,9 +1837,11 @@
+ 			break;
+ 		case MMC_BLK_CMD_ERR:
+ 			ret = mmc_blk_cmd_err(md, card, brq, req, ret);
+-			if (!mmc_blk_reset(md, card->host, type))
+-				break;
+-			goto cmd_abort;
++			if (mmc_blk_reset(md, card->host, type))
++				goto cmd_abort;
++			if (!ret)
++				goto start_new_req;
++			break;
+ 		case MMC_BLK_RETRY:
+ 			if (retry++ < 5)
+ 				break;
